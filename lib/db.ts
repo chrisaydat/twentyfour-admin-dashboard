@@ -1,72 +1,138 @@
 import 'server-only';
 
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
-import {
-  pgTable,
-  text,
-  numeric,
-  integer,
-  timestamp,
-  pgEnum,
-  serial
-} from 'drizzle-orm/pg-core';
-import { count, eq, ilike } from 'drizzle-orm';
-import { createInsertSchema } from 'drizzle-zod';
+import { supabase } from './supabase';
+import { Product, Category, Inventory, Order } from './types';
 
-export const db = drizzle(neon(process.env.POSTGRES_URL!));
-
-export const statusEnum = pgEnum('status', ['active', 'inactive', 'archived']);
-
-export const products = pgTable('products', {
-  id: serial('id').primaryKey(),
-  imageUrl: text('image_url').notNull(),
-  name: text('name').notNull(),
-  status: statusEnum('status').notNull(),
-  price: numeric('price', { precision: 10, scale: 2 }).notNull(),
-  stock: integer('stock').notNull(),
-  availableAt: timestamp('available_at').notNull()
-});
-
-export type SelectProduct = typeof products.$inferSelect;
-export const insertProductSchema = createInsertSchema(products);
-
+// Products
 export async function getProducts(
   search: string,
-  offset: number
-): Promise<{
-  products: SelectProduct[];
-  newOffset: number | null;
-  totalProducts: number;
-}> {
-  // Always search the full table, not per page
+  offset: number = 0
+): Promise<{ products: Product[]; newOffset: number | null; totalProducts: number }> {
+  let query = supabase
+    .from('products')
+    .select('*, inventory(*)', { count: 'exact' });
+
   if (search) {
-    return {
-      products: await db
-        .select()
-        .from(products)
-        .where(ilike(products.name, `%${search}%`))
-        .limit(1000),
-      newOffset: null,
-      totalProducts: 0
-    };
+    query = query.ilike('name', `%${search}%`);
   }
 
-  if (offset === null) {
-    return { products: [], newOffset: null, totalProducts: 0 };
-  }
+  const { data: products, count, error } = await query
+    .range(offset, offset + 4)
+    .order('name');
 
-  let totalProducts = await db.select({ count: count() }).from(products);
-  let moreProducts = await db.select().from(products).limit(5).offset(offset);
-  let newOffset = moreProducts.length >= 5 ? offset + 5 : null;
+  if (error) {
+    console.error('Error fetching products:', error);
+    throw error;
+  }
 
   return {
-    products: moreProducts,
-    newOffset,
-    totalProducts: totalProducts[0].count
+    products: products || [],
+    newOffset: products?.length === 5 ? offset + 5 : null,
+    totalProducts: count || 0
   };
 }
 
-export async function deleteProductById(id: number) {
-  await db.delete(products).where(eq(products.id, id));
+export async function getProductById(id: string): Promise<Product | null> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*, inventory(*), categories(*)')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching product:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+export async function createProduct(product: Omit<Product, 'id'>) {
+  const { data, error } = await supabase
+    .from('products')
+    .insert(product)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating product:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+export async function updateProduct(id: string, updates: Partial<Product>) {
+  const { data, error } = await supabase
+    .from('products')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating product:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+export async function deleteProduct(id: string) {
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting product:', error);
+    throw error;
+  }
+}
+
+// Categories
+export async function getCategories(): Promise<Category[]> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .order('name');
+
+  if (error) {
+    console.error('Error fetching categories:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+// Orders
+export async function getOrders(page: number = 1): Promise<Order[]> {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*, order_items(*)')
+    .order('order_date', { ascending: false })
+    .range((page - 1) * 10, page * 10 - 1);
+
+  if (error) {
+    console.error('Error fetching orders:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+// Inventory
+export async function updateInventory(productId: string, quantity: number) {
+  const { error } = await supabase
+    .from('inventory')
+    .update({ 
+      quantity,
+      last_updated: new Date().toISOString()
+    })
+    .eq('product_id', productId);
+
+  if (error) {
+    console.error('Error updating inventory:', error);
+    throw error;
+  }
 }

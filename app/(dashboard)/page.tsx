@@ -4,18 +4,15 @@ import { Button } from '@/components/ui/button';
 import { ProductsTable } from './products-table';
 import { getProducts } from '@/lib/db';
 
-export default async function ProductsPage(
-  props: {
-    searchParams: Promise<{ q: string; offset: string }>;
-  }
-) {
-  const searchParams = await props.searchParams;
+export default async function ProductsPage({
+  searchParams
+}: {
+  searchParams: { q?: string; offset?: string };
+}) {
   const search = searchParams.q ?? '';
-  const offset = searchParams.offset ?? 0;
-  const { products, newOffset, totalProducts } = await getProducts(
-    search,
-    Number(offset)
-  );
+  const offset = parseInt(searchParams.offset ?? '0');
+  
+  const { products, newOffset, totalProducts } = await getProducts(search, offset);
 
   return (
     <Tabs defaultValue="all">

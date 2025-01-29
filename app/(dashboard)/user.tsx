@@ -1,5 +1,6 @@
+'use client'
+
 import { Button } from '@/components/ui/button';
-import { auth, signOut } from '@/lib/auth';
 import Image from 'next/image';
 import {
   DropdownMenu,
@@ -9,11 +10,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import Link from 'next/link';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-export async function User() {
-  let session = await auth();
-  let user = session?.user;
+export function User() {
+  const router = useRouter();
+  const supabase = createClientComponentClient();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, [supabase.auth]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.refresh();
+  };
 
   return (
     <DropdownMenu>
@@ -24,7 +41,7 @@ export async function User() {
           className="overflow-hidden rounded-full"
         >
           <Image
-            src={user?.image ?? '/placeholder-user.jpg'}
+            src={user?.user_metadata?.avatar_url ?? '/placeholder-user.jpg'}
             width={36}
             height={36}
             alt="Avatar"
@@ -39,19 +56,12 @@ export async function User() {
         <DropdownMenuItem>Support</DropdownMenuItem>
         <DropdownMenuSeparator />
         {user ? (
-          <DropdownMenuItem>
-            <form
-              action={async () => {
-                'use server';
-                await signOut();
-              }}
-            >
-              <button type="submit">Sign Out</button>
-            </form>
+          <DropdownMenuItem onClick={handleSignOut}>
+            Sign Out
           </DropdownMenuItem>
         ) : (
-          <DropdownMenuItem>
-            <Link href="/login">Sign In</Link>
+          <DropdownMenuItem onClick={() => router.push('/login')}>
+            Sign In
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>
