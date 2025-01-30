@@ -1,16 +1,15 @@
-export default {
+import type { NextConfig } from 'next'
+
+const config: NextConfig = {
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'avatars.githubusercontent.com',
-        search: ''
+        hostname: 'grtbfziqfrsscaqlpzsd.supabase.co',
+        pathname: '/storage/v1/object/public/**',
       },
-      {
-        protocol: 'https',
-        hostname: '*.public.blob.vercel-storage.com',
-        search: ''
-      }
-    ]
-  }
-};
+    ],
+  },
+}
+
+export default config
