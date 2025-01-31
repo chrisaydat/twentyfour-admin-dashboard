@@ -64,7 +64,8 @@ export const handlers = {
         },
       }
     )
-    return supabase.auth.getSession()
+    const { data: { session }, error } = await supabase.auth.getSession()
+    return Response.json({ session, error })
   },
   POST: async (request: Request) => {
     const cookieStore = await cookies()
@@ -85,6 +86,7 @@ export const handlers = {
         },
       }
     )
-    return supabase.auth.getSession()
+    const { data: { session }, error } = await supabase.auth.getSession()
+    return Response.json({ session, error })
   }
 }
