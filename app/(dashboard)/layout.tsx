@@ -1,3 +1,7 @@
+export const runtime = 'edge';
+
+import { redirect } from 'next/navigation';
+import { requireAuth } from '@/lib/auth';
 import Link from 'next/link';
 import {
   Home,
@@ -32,11 +36,14 @@ import Providers from './providers';
 import { NavItem } from './nav-item';
 import { SearchInput } from './search';
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children
 }: {
   children: React.ReactNode;
 }) {
+  // Check authentication at the layout level
+  await requireAuth();
+
   return (
     <Providers>
       <main className="flex min-h-screen w-full flex-col bg-muted/40">

@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 
+export const runtime = 'edge'
+
 export async function createClient() {
   const cookieStore = cookies()
 
@@ -33,15 +35,38 @@ export async function signIn(email: string, password: string) {
   if (error) throw error
 }
 
-export async function requireAuth() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+// Add type for session
+type AuthSession = {
+  user: {
+    id: string;
+    email: string;
+    role?: string;
+  };
+  access_token: string;
+};
+
+// Enhance requireAuth to include role-based access
+export async function requireAuth(requiredRole?: string) {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
-    redirect('/login')
+    redirect('/login');
   }
 
-  return session
+  if (requiredRole) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
+
+    if (!profile || profile.role !== requiredRole) {
+      redirect('/unauthorized');
+    }
+  }
+
+  return session;
 }
 
 export async function signOut() {
@@ -89,4 +114,19 @@ export const handlers = {
     const { data: { session }, error } = await supabase.auth.getSession()
     return Response.json({ session, error })
   }
+}
+
+// Add function to check specific permissions
+export async function hasPermission(permission: string) {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session) return false;
+
+  const { data: userPermissions } = await supabase
+    .from('user_permissions')
+    .select('permission')
+    .eq('user_id', session.user.id);
+
+  return userPermissions?.some(p => p.permission === permission) ?? false;
 }

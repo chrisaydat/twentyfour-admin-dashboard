@@ -48,8 +48,8 @@ export default async function ProductsPage(
       </div>
       <TabsContent value="all">
         <ProductsTable
-          products={products}
-          offset={newOffset ?? 0}
+          initialProducts={products}
+          initialOffset={newOffset ?? 0}
           totalProducts={totalProducts}
         />
       </TabsContent>
