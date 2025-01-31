@@ -5,11 +5,15 @@ export type Category = {
 
 export type Product = {
   id: string;
-  category_id: string;
   name: string;
   description: string;
   price: number;
   image_url: string;
+  category_id: number;
+  created_at: string;
+  stock: number;
+  availableAt: Date;
+  status: 'active' | 'inactive' | 'archived';
 }
 
 export type Inventory = {
@@ -69,4 +73,6 @@ export enum PaymentStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
   REFUNDED = 'refunded'
-} 
+}
+
+export type SelectProduct = Product 

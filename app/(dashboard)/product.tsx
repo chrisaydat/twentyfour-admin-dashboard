@@ -19,7 +19,11 @@ type ProductWithDetails = ProductType & {
   status: 'active' | 'inactive' | 'archived';
 };
 
-export function Product({ product }: { product: ProductWithDetails }) {
+type ProductProps = {
+  product: ProductType
+}
+
+export function Product({ product }: ProductProps) {
   return (
     <TableRow>
       <TableCell className="hidden sm:table-cell">

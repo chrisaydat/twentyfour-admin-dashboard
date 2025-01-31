@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import supabaseAdmin from '@/lib/admin'
 import {
   Table,
