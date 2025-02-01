@@ -36,8 +36,7 @@ export default function LoginPage() {
 
       if (error) throw error
 
-      router.refresh()
-      router.push('/')
+      router.push('/homepage')
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
@@ -46,7 +45,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex justify-center items-start md:items-center p-8">
+    <div className="min-h-screen flex justify-center items-center p-8">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
@@ -94,14 +93,14 @@ export default function LoginPage() {
               className="w-full"
               disabled={loading}
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Logging in...' : 'Login'}
             </Button>
-            <p className="text-sm text-center text-muted-foreground">
+            {/* <p className="text-sm text-center text-muted-foreground">
               Don't have an account?{' '}
               <Link href="/register" className="text-primary hover:underline">
                 Sign up
               </Link>
-            </p>
+            </p> */}
           </CardFooter>
         </form>
       </Card>

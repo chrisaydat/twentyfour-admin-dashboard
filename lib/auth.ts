@@ -47,11 +47,21 @@ type AuthSession = {
 
 // Enhance requireAuth to include role-based access
 export async function requireAuth(requiredRole?: string) {
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const cookieStore = await cookies()
+  const authToken = cookieStore.get('sb-grtbfziqfrsscaqlpzsd-auth-token')
 
+  if (!authToken) {
+    redirect('/login')
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { session }
+  } = await supabase.auth.getSession()
+
+  // Check if session exists
   if (!session) {
-    redirect('/login');
+    redirect('/login')
   }
 
   if (requiredRole) {
@@ -59,14 +69,14 @@ export async function requireAuth(requiredRole?: string) {
       .from('profiles')
       .select('role')
       .eq('id', session.user.id)
-      .single();
+      .single()
 
     if (!profile || profile.role !== requiredRole) {
-      redirect('/unauthorized');
+      redirect('/unauthorized')
     }
   }
 
-  return session;
+  return session
 }
 
 export async function signOut() {

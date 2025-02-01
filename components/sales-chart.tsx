@@ -29,7 +29,7 @@ export function SalesChart({ className }: React.ComponentProps<typeof Card>) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => `₵${value}`}
               />
               <Bar dataKey="total" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
               <ChartTooltip content={<ChartTooltipContent />} />

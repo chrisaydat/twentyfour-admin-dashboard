@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { uploadProductImage } from '@/lib/storage'
+import { Link } from '@/components/ui/link'
 
 export default function AddProductPage() {
   const [loading, setLoading] = useState(false)
@@ -144,13 +145,13 @@ export default function AddProductPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Price</label>
+              <label className="text-sm font-medium">Price (₵)</label>
               <Input
                 name="price"
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="0.00"
+                placeholder="₵0.00"
                 required
               />
             </div>
@@ -181,7 +182,7 @@ export default function AddProductPage() {
             </Select>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col space-y-4">
           <Button 
             type="submit" 
             className="w-full"

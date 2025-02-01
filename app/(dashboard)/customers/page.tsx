@@ -19,7 +19,7 @@ import {
 
 export default async function CustomersPage() {
   const { data: users, error } = await supabaseAdmin
-    .from('users')
+    .from('auth.users')
     .select('id, email, raw_user_meta_data, created_at')
 
   console.log('Query response:', { data: users, error })
