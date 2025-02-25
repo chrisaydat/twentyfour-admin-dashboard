@@ -23,19 +23,72 @@ import {
 } from '@/components/ui/select'
 import { uploadProductImage } from '@/lib/storage'
 import { Link } from '@/components/ui/link'
+import { SupabaseAuthHelper } from '@/lib/supabase/auth-helper'
 
 export default function AddProductPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClientComponentClient()
-  const [categories, setCategories] = useState<{id: number, name: string}[]>([])
+  const authHelper = SupabaseAuthHelper.getInstance()
+
+  type Category = {
+    id: number;
+    name: string;
+    parent_id: number | null;
+    slug: string;
+  }
+
+  const [categories, setCategories] = useState<Category[]>([])
+
+  // Initialize auth helper and check session
+  useEffect(() => {
+    const init = async () => {
+      await authHelper.initialize()
+      const { session, error: authError } = await authHelper.getSession()
+      
+      if (authError || !session) {
+        console.error('Auth error:', authError)
+        router.push('/auth/login')
+        return
+      }
+    }
+
+    init()
+  }, [])
+
+  // Group categories by parent
+  const groupedCategories = categories.reduce<Record<number, { parent: Category; children: Category[] }>>((acc, category) => {
+    if (!category.parent_id) {
+      return {
+        ...acc,
+        [category.id]: {
+          parent: category,
+          children: categories.filter(c => c.parent_id === category.id)
+        }
+      }
+    }
+    return acc
+  }, {})
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const { data } = await supabase
-        .from('categories')
-        .select('id, name')
+      const { data, error: fetchError } = await authHelper.executeWithRetry<Category[]>(
+        async () => {
+          const result = await supabase
+            .from('categories')
+            .select('id, name, parent_id, slug')
+            .order('name')
+          return { data: result.data, error: result.error }
+        },
+        'fetch_categories'
+      )
+      
+      if (fetchError) {
+        console.error('Error fetching categories:', fetchError)
+        setError('Failed to load categories')
+        return
+      }
       
       if (data) setCategories(data)
     }
@@ -62,10 +115,7 @@ export default function AddProductPage() {
         throw new Error('All fields are required')
       }
 
-      // Log validated data
-      console.log('Validated Data:', { name, description, price, category, imageFile })
-
-      // Upload image
+      // Upload image with retry
       let imageUrl
       try {
         imageUrl = await uploadProductImage(imageFile)
@@ -75,17 +125,23 @@ export default function AddProductPage() {
         throw new Error('Failed to upload image')
       }
 
-      // Insert product
-      const { error: productError, data: productData } = await supabase
-        .from('products')
-        .insert([{
-          name,
-          description,
-          price: parseFloat(price as string),
-          category_id: parseInt(category as string),
-          image_url: imageUrl
-        }])
-        .select()
+      // Insert product with retry
+      const { error: productError, data: productData } = await authHelper.executeWithRetry(
+        async () => {
+          const result = await supabase
+            .from('products')
+            .insert([{
+              name,
+              description,
+              price: parseFloat(price as string),
+              category_id: parseInt(category as string),
+              image_url: imageUrl
+            }])
+            .select()
+          return { data: result.data, error: result.error }
+        },
+        'create_product'
+      )
 
       if (productError) {
         console.error('Database Error:', productError)
@@ -169,14 +225,25 @@ export default function AddProductPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Category</label>
             <Select name="category" required>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
-                    {category.name}
-                  </SelectItem>
+                {Object.values(groupedCategories).map(group => (
+                  <div key={group.parent.id}>
+                    <SelectItem value={group.parent.id.toString()} disabled>
+                      {group.parent.name}
+                    </SelectItem>
+                    {group.children.map((child: Category) => (
+                      <SelectItem 
+                        key={child.id} 
+                        value={child.id.toString()}
+                        className="pl-6"
+                      >
+                        {child.name}
+                      </SelectItem>
+                    ))}
+                  </div>
                 ))}
               </SelectContent>
             </Select>
