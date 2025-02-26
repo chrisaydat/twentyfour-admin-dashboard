@@ -2,6 +2,9 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
+// Mark this route to use the Edge Runtime (required for Cloudflare Pages)
+export const runtime = 'edge';
+
 // Default categories to create if none exist
 const defaultCategories = [
   { id: 1, name: 'Women', parent_id: null, slug: 'women' },
