@@ -28,6 +28,7 @@ import { SupabaseAuthHelper } from '@/lib/supabase/auth-helper'
 export default function AddProductPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isSettingUpCategories, setIsSettingUpCategories] = useState(false)
   const router = useRouter()
   const supabase = createClientComponentClient()
   const authHelper = SupabaseAuthHelper.getInstance()
@@ -73,28 +74,128 @@ export default function AddProductPage() {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const { data, error: fetchError } = await authHelper.executeWithRetry<Category[]>(
-        async () => {
-          const result = await supabase
-            .from('categories')
-            .select('id, name, parent_id, slug')
-            .order('name')
-          return { data: result.data, error: result.error }
-        },
-        'fetch_categories'
-      )
-      
-      if (fetchError) {
-        console.error('Error fetching categories:', fetchError)
-        setError('Failed to load categories')
-        return
+      try {
+        // First try with the auth helper (handles retries and token refresh)
+        const { data, error: fetchError } = await authHelper.executeWithRetry<Category[]>(
+          async () => {
+            const result = await supabase
+              .from('categories')
+              .select('id, name, parent_id, slug')
+              .order('name')
+            return { data: result.data, error: result.error }
+          },
+          'fetch_categories'
+        )
+        
+        if (fetchError) {
+          console.error('Error fetching categories with auth helper:', fetchError)
+          throw fetchError
+        }
+        
+        if (data && data.length > 0) {
+          console.log(`Loaded ${data.length} categories successfully`)
+          setCategories(data)
+          return
+        }
+
+        // If no categories were found, try a direct approach
+        console.log('No categories found with auth helper, trying direct fetch')
+        const { data: directData, error: directError } = await supabase
+          .from('categories')
+          .select('id, name, parent_id, slug')
+          .order('name')
+        
+        if (directError) {
+          console.error('Error with direct fetch:', directError)
+          throw directError
+        }
+        
+        if (directData && directData.length > 0) {
+          console.log(`Loaded ${directData.length} categories with direct fetch`)
+          setCategories(directData)
+          return
+        }
+        
+        // If still no categories, try checking if the table exists
+        console.warn('No categories found. Checking if table exists')
+        const { data: tableData, error: tableError } = await supabase
+          .from('information_schema.tables')
+          .select('table_name')
+          .eq('table_schema', 'public')
+          .eq('table_name', 'categories')
+        
+        if (tableError) {
+          console.error('Error checking if table exists:', tableError)
+        } else if (!tableData || tableData.length === 0) {
+          setError('Categories table does not exist. Please create it first.')
+        } else {
+          // Table exists but no data
+          setError('No categories found. Please add categories first.')
+        }
+      } catch (err) {
+        console.error('Categories fetch failed:', err)
+        setError('Failed to load categories. Please refresh the page or contact support.')
+        
+        // Last resort - use hardcoded categories if everything else fails
+        const fallbackCategories = [
+          { id: 1, name: 'Women', parent_id: null, slug: 'women' },
+          { id: 2, name: 'Men', parent_id: null, slug: 'men' },
+          { id: 3, name: 'Women Bags', parent_id: 1, slug: 'women-bags' },
+          { id: 4, name: 'Women Shoes', parent_id: 1, slug: 'women-shoes' },
+          { id: 5, name: 'Women Accessories', parent_id: 1, slug: 'women-accessories' },
+          { id: 6, name: 'Men Bags', parent_id: 2, slug: 'men-bags' },
+          { id: 7, name: 'Men Shoes', parent_id: 2, slug: 'men-shoes' },
+          { id: 8, name: 'Men Accessories', parent_id: 2, slug: 'men-accessories' },
+        ]
+        console.log('Using fallback categories')
+        setCategories(fallbackCategories)
       }
-      
-      if (data) setCategories(data)
     }
     
     fetchCategories()
   }, [])
+
+  // Function to set up categories
+  const setupCategories = async () => {
+    try {
+      setIsSettingUpCategories(true)
+      
+      const response = await fetch('/api/setup/categories', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to set up categories')
+      }
+      
+      // Fetch categories again after setup
+      const { data, error: fetchError } = await supabase
+        .from('categories')
+        .select('id, name, parent_id, slug')
+        .order('name')
+      
+      if (fetchError) {
+        throw fetchError
+      }
+      
+      if (data && data.length > 0) {
+        setCategories(data)
+        setError(null)
+      } else {
+        throw new Error('No categories found after setup')
+      }
+    } catch (err) {
+      console.error('Error setting up categories:', err)
+      setError(err instanceof Error ? err.message : 'Failed to set up categories')
+    } finally {
+      setIsSettingUpCategories(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -224,6 +325,21 @@ export default function AddProductPage() {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Category</label>
+            {error && error.includes('categories') ? (
+              <div className="mb-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={setupCategories}
+                  disabled={isSettingUpCategories}
+                >
+                  {isSettingUpCategories ? 'Setting up categories...' : 'Set up categories'}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click to set up default categories
+                </p>
+              </div>
+            ) : null}
             <Select name="category" required>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a category" />
