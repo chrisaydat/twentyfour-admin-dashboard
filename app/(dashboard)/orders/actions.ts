@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
@@ -10,11 +10,25 @@ const validStatuses = ["pending", "paid", "failed", "shipped", "delivered"];
 // In the future, when you update your database enum, you can add these:
 // const allPotentialStatuses = ["pending", "active", "completed", "cancelled"];
 
+// Create a Supabase client with the anon key
+function getSupabaseClient() {
+  // Required environment variables
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Missing Supabase environment variables');
+    throw new Error('Missing required environment variables for Supabase');
+  }
+  
+  // Create the client with anon key
+  return createClient(supabaseUrl, supabaseAnonKey);
+}
+
 // Function to get valid statuses from the database
 export async function getValidStatuses() {
   try {
-    const cookieStore = cookies();
-    const supabase = createServerComponentClient({ cookies: () => cookieStore });
+    const supabase = getSupabaseClient();
     
     // Try to get enum values directly from the column
     const { data, error } = await supabase
@@ -27,13 +41,20 @@ export async function getValidStatuses() {
       return validStatuses; // Fall back to default list
     }
     
-    // Extract unique status values
-    const uniqueStatuses = [...new Set(data.map(order => order.status))];
+    // Extract unique status values using filter instead of Set
+    const uniqueStatuses = data
+      .map(order => order.status)
+      .filter((status, index, self) => self.indexOf(status) === index);
     console.log('Unique statuses from DB:', uniqueStatuses);
     
-    // Return both existing statuses from DB plus our predefined valid statuses
-    // to ensure we always have all options available even if no orders have that status yet
-    const allValidStatuses = [...new Set([...uniqueStatuses, ...validStatuses])];
+    // Combine with our predefined statuses
+    const allValidStatuses = [...uniqueStatuses];
+    // Add any missing statuses from our predefined list
+    validStatuses.forEach(status => {
+      if (!allValidStatuses.includes(status)) {
+        allValidStatuses.push(status);
+      }
+    });
     console.log('All valid statuses:', allValidStatuses);
     
     return allValidStatuses;
@@ -46,9 +67,7 @@ export async function getValidStatuses() {
 // Get all orders from the database
 export async function getOrders() {
   try {
-    // Fix: properly await cookies to avoid synchronous access error
-    const cookieStore = cookies();
-    const supabase = createServerComponentClient({ cookies: () => cookieStore });
+    const supabase = getSupabaseClient();
 
     let { data: orders, error } = await supabase
       .from('orders')
@@ -98,8 +117,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
     // Debug log to track the update attempt
     console.log(`Attempting to update order ${orderId} to status: ${status}`);
     
-    const cookieStore = cookies();
-    const supabase = createServerComponentClient({ cookies: () => cookieStore });
+    const supabase = getSupabaseClient();
 
     const { data, error } = await supabase
       .from('orders')

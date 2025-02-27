@@ -3,7 +3,13 @@ import { Activity, CreditCard, DollarSign, Users } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
 
-export function DashboardCards() {
+interface DashboardCardsProps {
+  totalRevenue: number;
+  salesTotal: number;
+  activeUsers: number;
+}
+
+export function DashboardCards({ totalRevenue, salesTotal, activeUsers }: DashboardCardsProps) {
   return (
     <>
       <Card>
@@ -12,8 +18,8 @@ export function DashboardCards() {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(45231.89)}</div>
-          <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+          <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
+          <p className="text-xs text-muted-foreground">From delivered orders</p>
         </CardContent>
       </Card>
       <Card>
@@ -22,8 +28,8 @@ export function DashboardCards() {
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">+2350</div>
-          <p className="text-xs text-muted-foreground">+180.1% from last month</p>
+          <div className="text-2xl font-bold">+{activeUsers}</div>
+          <p className="text-xs text-muted-foreground">Active users</p>
         </CardContent>
       </Card>
       <Card>
@@ -32,18 +38,18 @@ export function DashboardCards() {
           <CreditCard className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(12234)}</div>
-          <p className="text-xs text-muted-foreground">+19% from last month</p>
+          <div className="text-2xl font-bold">{formatCurrency(salesTotal)}</div>
+          <p className="text-xs text-muted-foreground">From paid orders</p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Active Now</CardTitle>
+          <CardTitle className="text-sm font-medium">Orders Pending</CardTitle>
           <Activity className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">+573</div>
-          <p className="text-xs text-muted-foreground">+201 since last hour</p>
+          <div className="text-2xl font-bold">{Math.round((salesTotal / totalRevenue) * 100)}%</div>
+          <p className="text-xs text-muted-foreground">Paid vs. Delivered</p>
         </CardContent>
       </Card>
     </>
