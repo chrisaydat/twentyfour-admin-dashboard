@@ -12,6 +12,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Product as ProductType } from '@/lib/types';
 import { deleteProduct } from './actions';
+import { formatCurrency } from "@/lib/utils"
 
 type ProductWithDetails = ProductType & {
   stock: number;
@@ -41,7 +42,7 @@ export function Product({ product }: ProductProps) {
           {product.status}
         </Badge>
       </TableCell>
-      <TableCell className="hidden md:table-cell">{`₵${product.price}`}</TableCell>
+      <TableCell className="hidden md:table-cell">{formatCurrency(product.price)}</TableCell>
       <TableCell className="hidden md:table-cell">{product.stock}</TableCell>
       <TableCell className="hidden md:table-cell">
         {new Date(product.availableAt).toLocaleDateString("en-US")}
