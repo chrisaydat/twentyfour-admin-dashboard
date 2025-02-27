@@ -10,18 +10,15 @@ const validStatuses = ["pending", "paid", "failed", "shipped", "delivered"];
 // In the future, when you update your database enum, you can add these:
 // const allPotentialStatuses = ["pending", "active", "completed", "cancelled"];
 
-// Create a Supabase client with the anon key
+// Get Supabase client with anonymous key
 function getSupabaseClient() {
-  // Required environment variables
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase environment variables');
     throw new Error('Missing required environment variables for Supabase');
   }
   
-  // Create the client with anon key
   return createClient(supabaseUrl, supabaseAnonKey);
 }
 
@@ -79,7 +76,16 @@ export async function getOrders() {
       return [];
     }
 
-    console.log('Raw order data from DB:', orders[0]);
+    // Add null check before accessing orders
+    if (!orders) {
+      console.log('No orders data returned from database');
+      return [];
+    }
+
+    // Only log if there are orders
+    if (orders.length > 0) {
+      console.log('Raw order data from DB:', orders[0]);
+    }
 
     // Map database fields to client-side expected fields
     const formattedOrders = orders.map((order) => {

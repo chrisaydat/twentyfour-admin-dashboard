@@ -32,7 +32,7 @@ export default async function HomePage() {
     return (
       <DashboardShell>
         <DashboardHeader heading="Dashboard" text="Welcome to your dashboard">
-          <Button>Create new</Button>
+          {/* Removed the Create new button */}
         </DashboardHeader>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <DashboardCards 
@@ -54,7 +54,7 @@ export default async function HomePage() {
     return (
       <DashboardShell>
         <DashboardHeader heading="Dashboard" text="Welcome to your dashboard">
-          <Button>Create new</Button>
+          {/* Removed the Create new button */}
         </DashboardHeader>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <DashboardCards 

@@ -20,8 +20,12 @@ type EmailResponse = {
 
 // Get Supabase client with anonymous key
 function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing required environment variables for Supabase');
+  }
   
   return createClient(supabaseUrl, supabaseAnonKey);
 }
@@ -39,6 +43,12 @@ export async function getCustomersFromOrders(): Promise<Customer[]> {
     
     if (error) {
       console.error('Error fetching orders:', error);
+      return [];
+    }
+    
+    // Add null check before accessing orders
+    if (!orders) {
+      console.log('No orders data returned from database');
       return [];
     }
     
