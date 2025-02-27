@@ -113,7 +113,7 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
       case 'shipped':
         return 'secondary'
       case 'delivered':
-        return 'success'
+        return 'default'
       case 'failed':
         return 'destructive'
       default:
