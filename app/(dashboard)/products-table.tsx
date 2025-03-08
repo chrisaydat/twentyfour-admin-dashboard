@@ -22,6 +22,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+type PageProps = {
+  params: {
+    id: string;
+  };
+}
+
 export function ProductsTable({
   initialProducts,
   initialOffset,

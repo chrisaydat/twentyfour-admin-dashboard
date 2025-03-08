@@ -60,20 +60,20 @@ export function Product({ product }: ProductProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Special handling for numeric fields - match exact database field names
+    // Special handling for numeric fields
     if (name === 'price') {
-      // For price, we want to allow decimal values and handle empty values
-      const numericValue = value === '' ? '' : parseFloat(value);
+      // Ensure price is always a number, or 0 if empty/invalid
+      const numericValue = value === '' ? 0 : parseFloat(value);
       setEditedProduct(prev => ({
         ...prev,
-        [name]: numericValue
+        [name]: isNaN(numericValue) ? 0 : numericValue
       }));
     } else if (name === 'category_id') {
-      // For category_id, we want to parse as integer
-      const numericValue = value === '' ? '' : parseInt(value);
+      // Ensure category_id is always a number, or 0 if empty/invalid
+      const numericValue = value === '' ? 0 : parseInt(value);
       setEditedProduct(prev => ({
         ...prev,
-        [name]: numericValue
+        [name]: isNaN(numericValue) ? 0 : numericValue
       }));
     } else {
       // For text fields, just use the value as is

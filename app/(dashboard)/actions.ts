@@ -34,17 +34,20 @@ export async function updateProduct(formData: FormData): Promise<ServerActionRes
     const id = formData.get('id') as string;
     
     console.log('=== UPDATE PRODUCT SERVER ACTION ===');
-    console.log('Raw formData entries:');
-    for (const [key, value] of formData.entries()) {
-      console.log(`${key}: ${value}`);
-    }
+    console.log('Raw formData values:');
+    console.log('id:', formData.get('id'));
+    console.log('name:', formData.get('name'));
+    console.log('description:', formData.get('description'));
+    console.log('price:', formData.get('price'));
     
-    // Extract all fields with their values
+    // Extract all fields with their values - without using formData.entries()
     const fields: Record<string, any> = {};
-    for (const [key, value] of formData.entries()) {
-      // Skip the ID field as it's not something we update
-      if (key !== 'id') {
-        fields[key] = value;
+    // Manually get each field
+    const fieldNames = ['name', 'description', 'price', 'category_id', 'image_url'];
+    for (const fieldName of fieldNames) {
+      const value = formData.get(fieldName);
+      if (value !== null) {
+        fields[fieldName] = value;
       }
     }
     
