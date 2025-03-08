@@ -43,6 +43,7 @@ export function ProductsTable({
   async function changePage(newOffset: number) {
     setIsLoading(true);
     router.push(`/?offset=${newOffset}`, { scroll: false });
+    router.refresh();
   }
 
   return (
