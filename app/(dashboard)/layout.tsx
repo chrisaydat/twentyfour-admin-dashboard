@@ -34,6 +34,7 @@ import { User } from './user';
 import { VercelLogo } from '@/components/icons';
 import Providers from './providers';
 import { NavItem } from './nav-item';
+// Import kept but commented out for easier restoration if needed
 import { SearchInput } from './search';
 
 export default async function DashboardLayout({
@@ -52,8 +53,11 @@ export default async function DashboardLayout({
           <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
             <MobileNav />
             <DashboardBreadcrumb />
-            <SearchInput />
-            <User />
+            {/* Search component removed as requested */}
+            {/* <SearchInput /> */}
+            <div className="ml-auto">
+              <User />
+            </div>
           </header>
           <main className="grid flex-1 items-start gap-2 p-4 sm:px-6 sm:py-0 md:gap-4 bg-muted/40">
             {children}

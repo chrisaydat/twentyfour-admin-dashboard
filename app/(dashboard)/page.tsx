@@ -7,13 +7,16 @@ import { ProductsTable } from './products-table';
 import { getProducts } from '@/lib/db';
 import Link from 'next/link'
 
+// This matches the original type that was working before
 export default async function ProductsPage(
   props: {
-    searchParams: { q?: string; offset?: string };
+    searchParams: Promise<{ q: string; offset: string }>;
   }
 ) {
-  const search = props.searchParams.q ?? '';
-  const offsetParam = props.searchParams.offset;
+  const searchParams = await props.searchParams;
+  // Always use empty string for search now that we've removed the search bar
+  const search = ''; // Removed searchParams.q ?? '';
+  const offsetParam = searchParams.offset;
   const offset = offsetParam ? parseInt(offsetParam) : 0;
   
   // Handle invalid offset values
