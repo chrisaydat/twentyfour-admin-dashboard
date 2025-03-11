@@ -9,16 +9,17 @@ import Link from 'next/link'
 
 export default async function ProductsPage(
   props: {
-    searchParams: Promise<{ q: string; offset: string }>;
+    searchParams: { q?: string; offset?: string };
   }
 ) {
-  const searchParams = await props.searchParams;
-  const search = searchParams.q ?? '';
-  const offset = searchParams.offset ?? 0;
-  const { products, newOffset, totalProducts } = await getProducts(
-    search,
-    Number(offset)
-  );
+  const search = props.searchParams.q ?? '';
+  const offsetParam = props.searchParams.offset;
+  const offset = offsetParam ? parseInt(offsetParam) : 0;
+  
+  // Handle invalid offset values
+  const safeOffset = Number.isNaN(offset) ? 0 : offset;
+  
+  const { products, totalProducts } = await getProducts(search, safeOffset);
 
   return (
     <Tabs defaultValue="all">
@@ -51,7 +52,7 @@ export default async function ProductsPage(
       <TabsContent value="all">
         <ProductsTable
           initialProducts={products}
-          initialOffset={newOffset ?? 0}
+          initialOffset={safeOffset}
           totalProducts={totalProducts}
         />
       </TabsContent>

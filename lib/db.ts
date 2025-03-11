@@ -8,6 +8,8 @@ export async function getProducts(
   search: string,
   offset: number = 0
 ): Promise<{ products: Product[]; newOffset: number | null; totalProducts: number }> {
+  const productsPerPage = 5; // Define page size constant for consistency
+  
   let query = supabase
     .from('products')
     .select('*, inventory(*)', { count: 'exact' });
@@ -17,7 +19,7 @@ export async function getProducts(
   }
 
   const { data: products, count, error } = await query
-    .range(offset, offset + 4)
+    .range(offset, offset + productsPerPage - 1)
     .order('name');
 
   if (error) {
@@ -27,7 +29,7 @@ export async function getProducts(
 
   return {
     products: products || [],
-    newOffset: products?.length === 5 ? offset + 5 : null,
+    newOffset: offset,
     totalProducts: count || 0
   };
 }

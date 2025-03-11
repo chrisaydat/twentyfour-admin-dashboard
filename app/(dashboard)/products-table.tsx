@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   TableHead,
   TableRow,
@@ -42,14 +42,57 @@ export function ProductsTable({
   const router = useRouter();
   const searchParams = useSearchParams();
   const productsPerPage = 5;
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentPage = Math.floor(initialOffset / productsPerPage) + 1;
   const totalPages = Math.ceil(totalProducts / productsPerPage);
 
+  // Update products and reset loading state when initialProducts change
+  useEffect(() => {
+    setProducts(initialProducts);
+    setIsLoading(false);
+    
+    // Clear any pending timeout
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = null;
+    }
+  }, [initialProducts]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, []);
+
   async function changePage(newOffset: number) {
+    // Don't allow negative offsets
+    if (newOffset < 0) return;
+    
     setIsLoading(true);
-    router.push(`/?offset=${newOffset}`, { scroll: false });
-    router.refresh();
+    
+    // Create a new URLSearchParams from the current searchParams
+    const params = new URLSearchParams(searchParams.toString());
+    
+    // Update the offset parameter
+    params.set('offset', newOffset.toString());
+    
+    // Create the new URL
+    try {
+      router.push(`/?${params.toString()}`, { scroll: false });
+      
+      // Set a safety timeout to reset loading state after 5 seconds
+      // in case the navigation doesn't trigger a component update
+      loadingTimeoutRef.current = setTimeout(() => {
+        setIsLoading(false);
+      }, 5000);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      setIsLoading(false);
+    }
   }
 
   return (
